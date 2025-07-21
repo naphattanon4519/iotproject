@@ -1,33 +1,165 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>IoT Temp & Humidity</title>
+  <meta charset="UTF-8">
+  <title>IoT Temp & Humidity Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0px 0px 15px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .current-data {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+    .data-box {
+      text-align: center;
+      padding: 10px 20px;
+      border-radius: 8px;
+      background-color: #e0f7fa;
+    }
+    .data-box.temp {
+      background-color: #ffe0b2;
+    }
+    .data-box.hum {
+      background-color: #b2dfdb;
+    }
+    #timestamp {
+      text-align: center;
+      font-size: 0.9em;
+      color: #666;
+      margin-bottom: 20px;
+    }
+    canvas {
+      background: #fff;
+      border-radius: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h1>🌡️ อุณหภูมิและความชื้น</h1>
-  <p>Temperature: <span id="temp">--</span> °C</p>
-  <p>Humidity: <span id="hum">--</span> %</p>
+  <div class="container">
+    <h1>🌤️ Temp & Humidity Monitor</h1>
+    <div class="current-data">
+      <div class="data-box temp">
+        <h2>🌡️ Temperature</h2>
+        <p id="temp">-- °C</p>
+      </div>
+      <div class="data-box hum">
+        <h2>💧 Humidity</h2>
+        <p id="hum">-- %</p>
+      </div>
+    </div>
+    <div id="timestamp">Last updated: --</div>
+    <canvas id="chart" height="120"></canvas>
+  </div>
 
   <script>
-    // config Firebase
+    // Firebase config (แก้ไขค่าด้านล่างให้ตรงกับโปรเจกต์คุณ)
     var firebaseConfig = {
       apiKey: "AIzaSyBVyiqdsl4HQ0CeC06AMtp06V-IgOKEQlE",
-  	authDomain: "iotproject-200a1.firebaseapp.com",
-  	databaseURL: "https://iotproject-200a1-default-rtdb.firebaseio.com",
-  	projectId: "iotproject-200a1",
-
+      authDomain: "iotproject-200a1-default-rtdb.firebaseio.com",
+      databaseURL: "https://iotproject-200a1-default-rtdb.firebaseio.com",
+      projectId: "iotproject-200a1T"
     };
     firebase.initializeApp(firebaseConfig);
     var db = firebase.database();
 
+    const tempEl = document.getElementById("temp");
+    const humEl = document.getElementById("hum");
+    const timeEl = document.getElementById("timestamp");
+
+    const ctx = document.getElementById('chart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: '🌡️ Temp (°C)',
+          data: [],
+          backgroundColor: 'rgba(255, 138, 101, 0.2)',
+          borderColor: 'rgba(255, 87, 34, 1)',
+          borderWidth: 2,
+          fill: true
+        },
+        {
+          label: '💧 Humidity (%)',
+          data: [],
+          backgroundColor: 'rgba(129, 212, 250, 0.2)',
+          borderColor: 'rgba(3, 169, 244, 1)',
+          borderWidth: 2,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            title: { display: true, text: 'Time' }
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Value' }
+          }
+        }
+      }
+    });
+
+    function updateChart(temp, hum) {
+      const now = new Date();
+      const label = now.toLocaleTimeString();
+      if (chart.data.labels.length > 20) {
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.shift();
+        chart.data.datasets[1].data.shift();
+      }
+      chart.data.labels.push(label);
+      chart.data.datasets[0].data.push(temp);
+      chart.data.datasets[1].data.push(hum);
+      chart.update();
+    }
+
+    function updateTime() {
+      const now = new Date();
+      timeEl.innerText = "Last updated: " + now.toLocaleString();
+    }
+
     db.ref("sensor/temperature").on("value", (snapshot) => {
-      document.getElementById("temp").innerText = snapshot.val();
+      const val = snapshot.val();
+      tempEl.innerText = val + " °C";
     });
 
     db.ref("sensor/humidity").on("value", (snapshot) => {
-      document.getElementById("hum").innerText = snapshot.val();
+      const val = snapshot.val();
+      humEl.innerText = val + " %";
+    });
+
+    db.ref("sensor").on("value", (snapshot) => {
+      const val = snapshot.val();
+      if (val && val.temperature !== undefined && val.humidity !== undefined) {
+        updateChart(val.temperature, val.humidity);
+        updateTime();
+      }
     });
   </script>
 </body>
