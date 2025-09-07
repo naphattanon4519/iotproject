@@ -3,23 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <title>ควบคุม LED ผ่าน Firebase</title>
+  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+    h2 { color: #333; }
+    button { padding: 12px 20px; margin: 10px; font-size: 16px; cursor: pointer; border: none; border-radius: 8px; }
+    .on { background-color: #16a34a; color: white; }
+    .off { background-color: #dc2626; color: white; }
+    #ledStatus { font-weight: bold; font-size: 20px; padding: 6px 12px; border-radius: 6px; }
+    .status-on { color: white; background: #16a34a; }
+    .status-off { color: white; background: #dc2626; }
+  </style>
 </head>
 <body>
   <h2>🔥 ควบคุมหลอดไฟ LED</h2>
-  <button onclick="turnOn()">เปิด LED</button>
-  <button onclick="turnOff()">ปิด LED</button>
+  <button class="on" onclick="turnOn()">เปิด LED</button>
+  <button class="off" onclick="turnOff()">ปิด LED</button>
   <p>สถานะ: <span id="ledStatus">--</span></p>
 
   <script>
-    // ตั้งค่า Firebase
+    // 🔧 ตั้งค่า Firebase ของคุณเอง
     const firebaseConfig = {
       apiKey: "AIzaSyC2A4kQOHMhh0VnsJ2yBQdu49IRiW5ywLY",
       authDomain: "ledproject-49642.firebaseapp.com",
       databaseURL: "https://ledproject-49642-default-rtdb.firebaseio.com",
       projectId: "ledproject-49642",
-      storageBucket: "ledproject-49642.firebasestorage.app",
+      storageBucket: "ledproject-49642.appspot.com",
       messagingSenderId: "855324832872",
       appId: "1:855324832872:web:4c16db5a982b0b4b2fb7dd"
     };
@@ -28,19 +39,30 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // ฟังก์ชันสั่งเปิด/ปิด
     function turnOn() {
       db.ref("led").set("on");
     }
-
     function turnOff() {
       db.ref("led").set("off");
     }
 
-    // อัปเดตสถานะแบบ real-time
-    db.ref("led").on("value", (snapshot) => {
-      document.getElementById("ledStatus").innerText = snapshot.val();
+    // เปลี่ยนแปลงแบบ real-time
+    const ledRef = db.ref("led");
+    ledRef.on("value", (snapshot) => {
+      const val = snapshot.val();
+      const ledStatus = document.getElementById("ledStatus");
+      if (val === "on") {
+        ledStatus.textContent = "ON";
+        ledStatus.className = "status-on";
+      } else if (val === "off") {
+        ledStatus.textContent = "OFF";
+        ledStatus.className = "status-off";
+      } else {
+        ledStatus.textContent = "--";
+        ledStatus.className = "";
+      }
     });
   </script>
 </body>
 </html>
-
