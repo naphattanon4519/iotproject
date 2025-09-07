@@ -1,0 +1,22 @@
+  <!DOCTYPE html>
+<html>
+<head>
+  <title>LED Control</title>
+</head>
+<body>
+  <h2>ควบคุม LED</h2>
+  <button onclick="fetch('/on')">ON</button>
+  <button onclick="fetch('/off')">OFF</button>
+  <p id="status">สถานะ: ...</p>
+
+  <script>
+    async function refresh() {
+      let res = await fetch('/');
+      let text = await res.text();
+      document.getElementById("status").innerText = 
+          text.includes("ON") ? "สถานะ: ON" : "สถานะ: OFF";
+    }
+    setInterval(refresh, 1000);
+  </script>
+</body>
+</html>
