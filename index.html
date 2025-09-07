@@ -1,45 +1,46 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ESP32 LED Control</title>
-<style>
-  body { margin:0; background:#f6f7f9; font-family:sans-serif; }
-  .wrap { max-width:500px; margin:40px auto; padding:20px; background:#fff; border-radius:14px; box-shadow:0 4px 20px rgba(0,0,0,.1);}
-  h1 { font-size:22px; margin-bottom:10px; }
-  .status { font-weight:bold; margin:10px 0; }
-  .dot { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:6px; }
-  .on { background:#43a047; }
-  .off { background:#e53935; }
-  button { padding:12px 20px; border:none; border-radius:10px; font-size:16px; cursor:pointer; color:#fff; margin:5px; }
-  .btn-on { background:#43a047; }
-  .btn-off { background:#e53935; }
-</style>
+  <meta charset="UTF-8">
+  <title>ควบคุม LED ผ่าน Firebase</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <h1>ควบคุม LED (ESP32 + Blynk)</h1>
-    <div class="status"><span id="dot" class="dot"></span><span id="txt">กำลังโหลด...</span></div>
-    <button class="btn-on" onclick="ledOn()">ON</button>
-    <button class="btn-off" onclick="ledOff()">OFF</button>
-    <div id="err" style="color:#d32f2f; margin-top:8px;"></div>
-  </div>
+  <h2>🔥 ควบคุมหลอดไฟ LED</h2>
+  <button onclick="turnOn()">เปิด LED</button>
+  <button onclick="turnOff()">ปิด LED</button>
+  <p>สถานะ: <span id="ledStatus">--</span></p>
 
-<script>
-async function refresh(){
-  try{
-    let r = await fetch('/state');
-    let j = await r.json();
-    let on = j.led == 1;
-    document.getElementById('dot').className = 'dot ' + (on?'on':'off');
-    document.getElementById('txt').textContent = on?'ON':'OFF';
-  }catch(e){ document.getElementById('err').textContent="Error: "+e; }
-}
-function ledOn(){ fetch('/on').then(refresh); }
-function ledOff(){ fetch('/off').then(refresh); }
-setInterval(refresh, 1000);
-refresh();
-</script>
+  <script>
+    // ตั้งค่า Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2A4kQOHMhh0VnsJ2yBQdu49IRiW5ywLY",
+      authDomain: "ledproject-49642.firebaseapp.com",
+      databaseURL: "https://ledproject-49642-default-rtdb.firebaseio.com",
+      projectId: "ledproject-49642",
+      storageBucket: "ledproject-49642.firebasestorage.app",
+      messagingSenderId: "855324832872",
+      appId: "1:855324832872:web:4c16db5a982b0b4b2fb7dd"
+    };
+
+    // เริ่มต้น Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function turnOn() {
+      db.ref("led").set("on");
+    }
+
+    function turnOff() {
+      db.ref("led").set("off");
+    }
+
+    // อัปเดตสถานะแบบ real-time
+    db.ref("led").on("value", (snapshot) => {
+      document.getElementById("ledStatus").innerText = snapshot.val();
+    });
+  </script>
 </body>
 </html>
+
